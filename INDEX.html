@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission: Imperative — SMAN 2 Palangka Raya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#0B1220;
+    --navy:#121B32;
+    --navy-panel:#182541;
+    --navy-panel-2:#1E2E52;
+    --line:#2C3B62;
+    --gold:#F4B942;
+    --gold-dim:#8A6A22;
+    --teal:#3ED6C5;
+    --coral:#FF6B6B;
+    --green:#4ADE80;
+    --dayak-red:#C1272D;
+    --text:#E9EDF7;
+    --muted:#8C9AC0;
+    --font-display:'Space Grotesk', 'Inter', sans-serif;
+    --font-body:'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(circle at 20% -10%, #1B2A50 0%, var(--navy-deep) 55%);
+    color:var(--text);
+    font-family:var(--font-body);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:24px 14px 60px;
+  }
+  .app{
+    width:100%;
+    max-width:760px;
+  }
+
+  /* ---------- Motif strip (inspired by Dayak carving patterns) ---------- */
+  .motif{
+    height:8px;
+    border-radius:8px;
+    margin-bottom:16px;
+    background: repeating-linear-gradient(
+      45deg,
+      var(--dayak-red) 0px, var(--dayak-red) 10px,
+      var(--gold) 10px, var(--gold) 20px,
+      #171313 20px, #171313 30px
+    );
+    opacity:.9;
+  }
+
+  /* ---------- HUD ---------- */
+  .hud{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+  .hud-title{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .hud-badge{
+    width:38px;height:38px;
+    border-radius:10px;
+    background:linear-gradient(135deg,var(--gold),var(--dayak-red));
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;
+    box-shadow:0 4px 14px rgba(244,185,66,.35);
+    flex-shrink:0;
+  }
+  .hud-title h1{
+    font-family:var(--font-display);
+    font-size:16px;
+    letter-spacing:.01em;
+    margin:0;
+    color:var(--text);
+  }
+  .hud-title p{
+    margin:2px 0 0;
+    font-size:11.5px;
+    color:var(--muted);
+  }
+  .score-pill{
+    background:var(--navy-panel);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:8px 14px;
+    font-family:var(--font-display);
+    font-size:13px;
+    color:var(--gold);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+  }
+
+  /* ---------- Progress dots ---------- */
+  .track{
+    display:flex;
+    gap:6px;
+    margin-bottom:22px;
+  }
+  .track .seg{
+    flex:1;
+    height:6px;
+    border-radius:6px;
+    background:var(--line);
+    overflow:hidden;
+  }
+  .track .seg i{
+    display:block;
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,var(--teal),var(--gold));
+    transition:width .5s ease;
+  }
+
+  /* ---------- Panel ---------- */
+  .panel{
+    background:var(--navy-panel);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:28px 26px;
+    position:relative;
+    overflow:hidden;
+    min-height:380px;
+    display:flex;
+    flex-direction:column;
+  }
+  .panel::before{
+    content:"";
+    position:absolute;
+    top:-60px; right:-60px;
+    width:180px; height:180px;
+    background:radial-gradient(circle, rgba(62,214,197,.14), transparent 70%);
+  }
+  .panel::after{
+    content:"";
+    position:absolute;
+    bottom:0; left:0; right:0;
+    height:4px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--dayak-red) 0px, var(--dayak-red) 8px,
+      var(--gold) 8px, var(--gold) 16px
+    );
+    opacity:.55;
+  }
+  .eyebrow{
+    font-family:var(--font-display);
+    font-size:12px;
+    color:var(--teal);
+    margin:0 0 6px;
+  }
+  .locale-tag{
+    display:inline-block;
+    font-family:var(--font-display);
+    font-size:11px;
+    color:var(--dayak-red);
+    background:rgba(193,39,45,.12);
+    border:1px solid rgba(193,39,45,.4);
+    border-radius:999px;
+    padding:3px 10px;
+    margin-bottom:10px;
+  }
+  h2.panel-title{
+    font-family:var(--font-display);
+    font-size:23px;
+    margin:0 0 12px;
+    line-height:1.25;
+  }
+  .lede{
+    color:var(--muted);
+    font-size:14.5px;
+    line-height:1.6;
+    margin:0 0 18px;
+  }
+  .example-line{
+    font-family:var(--font-display);
+    font-size:15px;
+    color:var(--text);
+    background:var(--navy-deep);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 16px;
+    margin:0 0 10px;
+  }
+
+  /* ---------- Options / quiz ---------- */
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:auto;
+  }
+  .opt{
+    text-align:left;
+    background:var(--navy-deep);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:12px;
+    padding:13px 16px;
+    font-size:14.5px;
+    font-family:var(--font-body);
+    cursor:pointer;
+    transition:border-color .15s ease, transform .1s ease, background .15s ease;
+  }
+  .opt:hover:not(:disabled){
+    border-color:var(--teal);
+    transform:translateY(-1px);
+  }
+  .opt:disabled{cursor:default;}
+  .opt.correct{
+    border-color:var(--green);
+    background:rgba(74,222,128,.12);
+    color:var(--green);
+  }
+  .opt.wrong{
+    border-color:var(--coral);
+    background:rgba(255,107,107,.12);
+    color:var(--coral);
+  }
+
+  .feedback{
+    margin-top:14px;
+    font-size:13.5px;
+    color:var(--muted);
+    min-height:18px;
+  }
+  .feedback.show-correct{color:var(--green);}
+  .feedback.show-wrong{color:var(--coral);}
+
+  /* ---------- Buttons ---------- */
+  .btn-row{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:20px;
+    gap:10px;
+  }
+  .btn{
+    font-family:var(--font-display);
+    font-size:14px;
+    border:none;
+    border-radius:10px;
+    padding:12px 22px;
+    cursor:pointer;
+    background:var(--gold);
+    color:#1B1503;
+    transition:opacity .15s ease, transform .1s ease;
+  }
+  .btn:hover{transform:translateY(-1px);}
+  .btn:disabled{
+    opacity:.35;
+    cursor:not-allowed;
+    transform:none;
+  }
+  .btn.ghost{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text);
+  }
+
+  /* ---------- Practice / fill-blank ---------- */
+  .practice-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .practice-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--navy-deep);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:14px;
+  }
+  .practice-row .num{
+    color:var(--muted);
+    font-family:var(--font-display);
+    font-size:13px;
+    width:18px;
+  }
+  .practice-row select{
+    background:var(--navy-panel-2);
+    border:1px solid var(--line);
+    color:var(--gold);
+    font-family:var(--font-display);
+    font-size:13.5px;
+    border-radius:7px;
+    padding:5px 8px;
+  }
+  .practice-row.correct{border-color:var(--green);}
+  .practice-row.wrong{border-color:var(--coral);}
+
+  /* ---------- Intro / result screens ---------- */
+  .center-stack{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    justify-content:center;
+    flex:1;
+    gap:6px;
+  }
+  .rank-emblem{
+    width:88px;height:88px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #FFE29A, var(--gold) 60%, var(--dayak-red));
+    display:flex;align-items:center;justify-content:center;
+    font-size:38px;
+    margin-bottom:14px;
+    box-shadow:0 0 0 6px rgba(244,185,66,.12);
+  }
+  .stat-grid{
+    display:flex;
+    gap:14px;
+    margin:18px 0 6px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .stat-box{
+    background:var(--navy-deep);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 20px;
+    min-width:120px;
+  }
+  .stat-box .n{
+    font-family:var(--font-display);
+    font-size:22px;
+    color:var(--gold);
+  }
+  .stat-box .l{
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:2px;
+  }
+
+  footer.note{
+    text-align:center;
+    margin-top:16px;
+    font-size:12px;
+    color:var(--muted);
+  }
+  footer.note .tag{
+    color:var(--dayak-red);
+    font-family:var(--font-display);
+  }
+
+  @media (max-width:480px){
+    .panel{padding:22px 18px;}
+    h2.panel-title{font-size:20px;}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+/* ===================== DATA ===================== */
+
+const STAGES = [
+  { key:"intro", label:"Briefing" },
+  { key:"definition", label:"Classroom" },
+  { key:"function", label:"Flag Ceremony" },
+  { key:"structure", label:"Dance Practice" },
+  { key:"features", label:"Class Duty" },
+  { key:"culture", label:"Local Culture" },
+  { key:"practice", label:"Morning Routine" },
+  { key:"result", label:"Report" },
+];
+
+const QUIZ_DEFINITION = {
+  eyebrow: "MISSION 1 · CLASSROOM, SMAN 2 PALANGKA RAYA",
+  locale: "📍 Classroom X-2",
+  title: "What is an Imperative Sentence?",
+  intro: "The bell just rang. Your English teacher writes some command sentences on the board before the lesson starts. Answer two questions to unlock the next mission.",
+  questions: [
+    {
+      q: "Which is the best definition of an imperative sentence?",
+      options: [
+        "A sentence that shows surprise or excitement.",
+        "A command, warning, instruction, or request, usually starting with a verb.",
+        "A sentence that asks for information from the listener.",
+        "A sentence that tells about something that happened in the past."
+      ],
+      correct: 1,
+      explain: "An imperative sentence is a command, warning, instruction, or request — and it usually begins with a verb."
+    },
+    {
+      q: "Which sentence below is an imperative sentence?",
+      options: [
+        "She walks to school every day.",
+        "Does she walk to school?",
+        "Walk to school!",
+        "What a long walk that was!"
+      ],
+      correct: 2,
+      explain: "\"Walk to school!\" starts with a base verb and the subject is hidden — a key feature of imperative sentences."
+    }
+  ]
+};
+
+const QUIZ_FUNCTION = {
+  eyebrow: "MISSION 2 · FLAG CEREMONY",
+  locale: "📍 Field, SMAN 2 Palangka Raya",
+  title: "The Social Function of Imperative Sentences",
+  intro: "Every Monday, the ceremony leader gives commands like \"Attention!\" and \"At ease!\" — these are all imperative sentences. Learn their social function before you move on.",
+  questions: [
+    {
+      q: "What is the main social function of an imperative sentence?",
+      options: [
+        "To direct, influence, or manage the behavior of others so they do or stop doing something.",
+        "To describe the speaker's deep feelings.",
+        "To formally ask permission from a supervisor.",
+        "To tell a personal story about the past."
+      ],
+      correct: 0,
+      explain: "Its social function is to direct, influence, or manage the behavior of others — just like a ceremony leader's commands."
+    },
+    {
+      q: "\"Sit down immediately or face a penalty!\" — this sentence shows a pragmatic function of...",
+      options: ["Invitation", "Warning", "Advice", "Question"],
+      correct: 1,
+      explain: "There is a threat of consequence (\"or face a penalty\"), so this is a warning, not just a plain command."
+    }
+  ]
+};
+
+const QUIZ_STRUCTURE = {
+  eyebrow: "MISSION 3 · MANASAI DANCE PRACTICE",
+  locale: "📍 School Hall",
+  title: "Generic Structure",
+  intro: "This afternoon, the Manasai dance club is rehearsing in the school hall. The dance coach gives instructions step by step. There are three basic patterns: Affirmative, Negative, and Adjective Command. Match each sentence with its structure.",
+  questions: [
+    {
+      q: "\"Open the window.\" — which structure is this?",
+      options: ["Affirmative Command (base verb + object)", "Negative Command (do not + base verb)", "Adjective Command (be + adjective)"],
+      correct: 0,
+      explain: "It starts directly with the base verb \"Open\" + object \"the window\" → Affirmative Command."
+    },
+    {
+      q: "\"Don't touch that.\" — which structure is this?",
+      options: ["Affirmative Command", "Negative Command (do not/don't + base verb)", "Adjective Command"],
+      correct: 1,
+      explain: "There is \"Don't\" before the base verb \"touch\" → Negative Command."
+    },
+    {
+      q: "\"Be quiet.\" — which structure is this?",
+      options: ["Affirmative Command", "Negative Command", "Adjective Command (be + adjective)"],
+      correct: 2,
+      explain: "The pattern \"Be\" + adjective \"quiet\" → Adjective Command — perfect for calming the audience before the dance begins."
+    }
+  ]
+};
+
+const QUIZ_FEATURES = {
+  eyebrow: "MISSION 4 · CLASS DUTY",
+  locale: "📍 Classroom, Duty Time",
+  title: "Language Features",
+  intro: "Today is your class cleaning duty. The class leader gives out tasks using a few command sentences. Identify the language feature behind each imperative example.",
+  questions: [
+    {
+      q: "\"Clean your room.\" — the subject is not written, but understood as \"you\". This is a feature of...",
+      options: ["Implied Subject", "Punctuation", "Semantic Diversity", "Polite Modifiers"],
+      correct: 0,
+      explain: "The subject \"you\" is hidden / not written → Implied Subject."
+    },
+    {
+      q: "\"Speak clearly.\" — the verb \"speak\" has no added ending at all. This shows the feature of...",
+      options: ["Polite Modifiers", "Base Form Verbs", "Affirmative and Negative", "Punctuation"],
+      correct: 1,
+      explain: "The verb is in its base form, with no tense/person suffix → Base Form Verbs."
+    },
+    {
+      q: "\"Get out of my house now!\" — the exclamation mark at the end emphasizes...",
+      options: ["Semantic Diversity", "Implied Subject", "Punctuation (urgency/force)", "Base Form Verbs"],
+      correct: 2,
+      explain: "The exclamation mark (!) shows urgency or a strong command → Punctuation."
+    },
+    {
+      q: "\"Please pass the salt.\" — the word \"please\" works as a...",
+      options: ["Polite Modifier", "Negative Command", "Semantic Diversity", "Implied Subject"],
+      correct: 0,
+      explain: "\"Please\" softens the command into a more polite request → Polite Modifiers."
+    }
+  ]
+};
+
+const QUIZ_CULTURE = {
+  eyebrow: "MISSION 5 · LOCAL CULTURE",
+  locale: "📍 Balanga Museum & Kahayan River, Palangka Raya",
+  title: "Imperative Sentences for Protecting Our Culture",
+  intro: "Your class is making a poster project about protecting the culture of Central Kalimantan, inspired by the spirit of <b style='color:var(--gold);'>Isen Mulang</b> (never give up). Choose the best imperative sentence for each poster.",
+  questions: [
+    {
+      q: "A poster about keeping the Kahayan River clean. Which sentence fits best?",
+      options: [
+        "Don't throw trash into the Kahayan River!",
+        "The Kahayan River is very long.",
+        "Do you like the Kahayan River?",
+        "The Kahayan River was clean."
+      ],
+      correct: 0,
+      explain: "This is a Negative Command (Don't + base verb) — a firm rule to keep the Kahayan River clean."
+    },
+    {
+      q: "A poster about protecting the Betang house (traditional Dayak longhouse). Which sentence fits best?",
+      options: [
+        "Is the Betang house preserved?",
+        "The Betang house was built long ago.",
+        "Preserve the Betang house for our next generation!",
+        "Betang houses are being preserved."
+      ],
+      correct: 2,
+      explain: "This is an Affirmative Command (base verb \"Preserve\" + object) — inviting everyone to protect the Betang house."
+    },
+    {
+      q: "A poster with the spirit of 'Isen Mulang' (never give up) for classmates joining a competition. Which sentence fits best?",
+      options: [
+        "You never give up.",
+        "Never give up, keep trying your best!",
+        "Did you give up?",
+        "Giving up is easy for some students."
+      ],
+      correct: 1,
+      explain: "A Negative + Affirmative Command that encourages others — matching the Isen Mulang spirit of never giving up."
+    }
+  ]
+};
+
+// Practice: fill in the blank (morning routine before school)
+const PRACTICE = {
+  eyebrow: "MISSION 6 · MORNING BEFORE SCHOOL",
+  locale: "📍 Home, before leaving for SMAN 2 Palangka Raya",
+  title: "Complete Your Morning Commands",
+  intro: "You just woke up and need to get ready quickly so you won't be late for school. Complete each command with the correct verb from the list below.",
+  bank: ["Get", "Open", "Make", "Clean", "Stretch", "Fold"],
+  items: [
+    { pre:"", verb:"Get", post:"up from the bed." },
+    { pre:"", verb:"Stretch", post:"your arms." },
+    { pre:"", verb:"Open", post:"the curtains." },
+    { pre:"", verb:"Make", post:"your bed." },
+    { pre:"", verb:"Fold", post:"the blanket neatly." },
+    { pre:"", verb:"Clean", post:"your room." },
+    { pre:"", verb:"Open", post:"the window." },
+    { pre:"", verb:"Get", post:"ready for the day." }
+  ]
+};
+
+/* ===================== STATE ===================== */
+
+let state = {
+  stageIndex: 0,
+  score: 0,
+  maxScore: 0,
+  qIndex: 0,
+  answered: false,
+  quizResults: {},
+};
+
+const app = document.getElementById("app");
+
+/* ===================== HELPERS ===================== */
+
+function renderShell(innerHTML){
+  const dots = STAGES.map((s,i)=>{
+    const filled = i <= state.stageIndex ? 100 : 0;
+    return `<div class="seg"><i style="width:${filled}%"></i></div>`;
+  }).join("");
+
+  app.innerHTML = `
+    <div class="motif"></div>
+    <div class="hud">
+      <div class="hud-title">
+        <div class="hud-badge">🛡️</div>
+        <div>
+          <h1>MISSION: IMPERATIVE — SMAN 2 PALANGKA RAYA</h1>
+          <p>${STAGES[state.stageIndex].label} · Step ${state.stageIndex + 1} of ${STAGES.length}</p>
+        </div>
+      </div>
+      <div class="score-pill">⭐ ${state.score} / ${state.maxScore || "–"} pts</div>
+    </div>
+    <div class="track">${dots}</div>
+    <div class="panel">${innerHTML}</div>
+    <footer class="note">Individual task · Keep the <span class="tag">Isen Mulang</span> spirit — never give up until the mission is done!</footer>
+  `;
+}
+
+function goStage(i){
+  state.stageIndex = i;
+  state.qIndex = 0;
+  state.answered = false;
+  render();
+}
+
+/* ===================== SCREENS ===================== */
+
+function renderIntro(){
+  renderShell(`
+    <div class="center-stack">
+      <div class="rank-emblem">🌿</div>
+      <p class="eyebrow">MISSION BRIEFING</p>
+      <h2 class="panel-title">Welcome, Student of SMAN 2 Palangka Raya!</h2>
+      <p class="lede" style="max-width:500px;">
+        You are a new student working on an English project about <b style="color:var(--gold);">imperative sentences</b>.
+        Your journey goes through the classroom, the flag ceremony, Manasai dance practice, class duty, and a culture
+        project by the Kahayan River — all with the spirit of <b style="color:var(--dayak-red);">Isen Mulang</b>, never give up!
+      </p>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="n">5</div><div class="l">Learning Missions</div></div>
+        <div class="stat-box"><div class="n">14</div><div class="l">Questions &amp; Practice</div></div>
+        <div class="stat-box"><div class="n">1</div><div class="l">Final Title</div></div>
+      </div>
+      <div class="btn-row" style="margin-top:22px;">
+        <button class="btn" onclick="startMission()">Start Mission →</button>
+      </div>
+    </div>
+  `);
+}
+
+function startMission(){
+  goStage(1);
+}
+
+function renderQuizStage(data, stageKey){
+  const qi = state.qIndex;
+  const total = data.questions.length;
+  const question = data.questions[qi];
+  const introBlock = qi === 0 ? `<p class="lede">${data.intro}</p>` : "";
+
+  const optionsHTML = question.options.map((opt, idx)=>
+    `<button class="opt" data-idx="${idx}" onclick="answerQuiz('${stageKey}', ${idx})">${opt}</button>`
+  ).join("");
+
+  renderShell(`
+    <p class="eyebrow">${data.eyebrow} · Question ${qi+1}/${total}</p>
+    <span class="locale-tag">${data.locale}</span>
+    <h2 class="panel-title">${data.title}</h2>
+    ${introBlock}
+    <div class="example-line">${question.q}</div>
+    <div class="options" id="opts">${optionsHTML}</div>
+    <div class="feedback" id="feedback"></div>
+    <div class="btn-row">
+      <button class="btn" id="nextBtn" disabled onclick="nextQuizQuestion('${stageKey}')">Next →</button>
+    </div>
+  `);
+}
+
+function currentQuizData(){
+  switch(STAGES[state.stageIndex].key){
+    case "definition": return QUIZ_DEFINITION;
+    case "function": return QUIZ_FUNCTION;
+    case "structure": return QUIZ_STRUCTURE;
+    case "features": return QUIZ_FEATURES;
+    case "culture": return QUIZ_CULTURE;
+  }
+  return null;
+}
+
+function answerQuiz(stageKey, idx){
+  if(state.answered) return;
+  state.answered = true;
+
+  const data = currentQuizData();
+  const q = data.questions[state.qIndex];
+  const buttons = document.querySelectorAll("#opts .opt");
+  buttons.forEach(b=> b.disabled = true);
+
+  const chosenBtn = buttons[idx];
+  const correctBtn = buttons[q.correct];
+  const feedback = document.getElementById("feedback");
+
+  state.quizResults[stageKey] = state.quizResults[stageKey] || 0;
+
+  if(idx === q.correct){
+    chosenBtn.classList.add("correct");
+    state.score += 10;
+    state.quizResults[stageKey] += 1;
+    feedback.textContent = "✔ Correct — " + q.explain;
+    feedback.className = "feedback show-correct";
+  } else {
+    chosenBtn.classList.add("wrong");
+    correctBtn.classList.add("correct");
+    feedback.textContent = "✘ Not quite — " + q.explain;
+    feedback.className = "feedback show-wrong";
+  }
+  document.getElementById("nextBtn").disabled = false;
+  syncScorePill();
+}
+
+function syncScorePill(){
+  const pill = document.querySelector(".score-pill");
+  if(pill) pill.textContent = `⭐ ${state.score} / ${state.maxScore || "–"} pts`;
+}
+
+function nextQuizQuestion(stageKey){
+  const data = currentQuizData();
+  if(state.qIndex < data.questions.length - 1){
+    state.qIndex += 1;
+    state.answered = false;
+    renderQuizStage(data, stageKey);
+  } else {
+    goStage(state.stageIndex + 1);
+  }
+}
+
+function renderPracticeStage(){
+  const rows = PRACTICE.items.map((item, i)=>{
+    const options = PRACTICE.bank.map(w=>`<option value="${w}">${w}</option>`).join("");
+    return `
+      <div class="practice-row" id="prow-${i}">
+        <span class="num">${i+1}.</span>
+        <select id="psel-${i}">
+          <option value="">–</option>
+          ${options}
+        </select>
+        <span>${item.post}</span>
+      </div>
+    `;
+  }).join("");
+
+  renderShell(`
+    <p class="eyebrow">${PRACTICE.eyebrow}</p>
+    <span class="locale-tag">${PRACTICE.locale}</span>
+    <h2 class="panel-title">${PRACTICE.title}</h2>
+    <p class="lede">${PRACTICE.intro}</p>
+    <div class="practice-list">${rows}</div>
+    <div class="feedback" id="practiceFeedback"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="checkPractice()">Check Answers ✔</button>
+    </div>
+  `);
+}
+
+function checkPractice(){
+  let correctCount = 0;
+  PRACTICE.items.forEach((item, i)=>{
+    const sel = document.getElementById(`psel-${i}`);
+    const row = document.getElementById(`prow-${i}`);
+    row.classList.remove("correct","wrong");
+    if(sel.value === item.verb){
+      row.classList.add("correct");
+      correctCount++;
+    } else if(sel.value !== ""){
+      row.classList.add("wrong");
+    }
+  });
+
+  const feedback = document.getElementById("practiceFeedback");
+  if(!state.quizResults["practice_done"]){
+    state.score += correctCount * 5;
+    state.quizResults["practice_done"] = true;
+    state.quizResults["practice"] = correctCount;
+    syncScorePill();
+  }
+
+  if(correctCount === PRACTICE.items.length){
+    feedback.textContent = `✔ Perfect! All ${PRACTICE.items.length} commands are correct. You're ready for school at SMAN 2 Palangka Raya. Move on to your final report.`;
+    feedback.className = "feedback show-correct";
+  } else {
+    feedback.textContent = `You got ${correctCount} out of ${PRACTICE.items.length} correct. Fix the red boxes, then check again or continue.`;
+    feedback.className = "feedback show-wrong";
+  }
+
+  let btnRow = document.querySelector(".btn-row");
+  if(!document.getElementById("continueBtn")){
+    const cont = document.createElement("button");
+    cont.className = "btn";
+    cont.id = "continueBtn";
+    cont.textContent = "See Final Report →";
+    cont.onclick = ()=> goStage(state.stageIndex + 1);
+    btnRow.appendChild(cont);
+  }
+}
+
+function renderResultStage(){
+  const totalQuizQuestions = QUIZ_DEFINITION.questions.length + QUIZ_FUNCTION.questions.length + QUIZ_STRUCTURE.questions.length + QUIZ_FEATURES.questions.length + QUIZ_CULTURE.questions.length;
+  const totalPossible = totalQuizQuestions * 10 + PRACTICE.items.length * 5;
+  state.maxScore = totalPossible;
+
+  const pct = Math.round((state.score / totalPossible) * 100);
+
+  let rank, emblem, remark;
+  if(pct >= 90){ rank = "Isen Mulang Ambassador"; emblem = "🏆"; remark = "Amazing! You have mastered imperative sentences — a true Isen Mulang Ambassador of SMAN 2 Palangka Raya!"; }
+  else if(pct >= 70){ rank = "Student Council Ambassador"; emblem = "🎖️"; remark = "Great job! You can already recognize and build imperative sentences well."; }
+  else if(pct >= 40){ rank = "Class Officer"; emblem = "🧭"; remark = "You understand the basics — try the missions again for a sharper result."; }
+  else { rank = "New Student"; emblem = "🔰"; remark = "You're just getting started! Try the missions again with the Isen Mulang spirit to master imperative sentences."; }
+
+  renderShell(`
+    <div class="center-stack">
+      <div class="rank-emblem">${emblem}</div>
+      <p class="eyebrow">MISSION REPORT</p>
+      <h2 class="panel-title">Your title: ${rank}</h2>
+      <p class="lede" style="max-width:480px;">${remark}</p>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="n">${state.score}</div><div class="l">Total Points</div></div>
+        <div class="stat-box"><div class="n">${pct}%</div><div class="l">Final Score</div></div>
+        <div class="stat-box"><div class="n">${state.quizResults["practice"] ?? 0}/8</div><div class="l">Practice Correct</div></div>
+      </div>
+      <div class="btn-row" style="margin-top:22px;">
+        <button class="btn ghost" onclick="restartMission()">Try Again</button>
+      </div>
+    </div>
+  `);
+}
+
+function restartMission(){
+  state = { stageIndex:0, score:0, maxScore:0, qIndex:0, answered:false, quizResults:{} };
+  render();
+}
+
+/* ===================== ROUTER ===================== */
+
+function render(){
+  const key = STAGES[state.stageIndex].key;
+  if(key === "intro") return renderIntro();
+  if(key === "definition") return renderQuizStage(QUIZ_DEFINITION, "definition");
+  if(key === "function") return renderQuizStage(QUIZ_FUNCTION, "function");
+  if(key === "structure") return renderQuizStage(QUIZ_STRUCTURE, "structure");
+  if(key === "features") return renderQuizStage(QUIZ_FEATURES, "features");
+  if(key === "culture") return renderQuizStage(QUIZ_CULTURE, "culture");
+  if(key === "practice") return renderPracticeStage();
+  if(key === "result") return renderResultStage();
+}
+
+render();
+</script>
+</body>
+</html>
